@@ -165,6 +165,15 @@ DEFINE_int32(
     "with rootcanal_instance_num. Else, launch a new rootcanal instance");
 DEFINE_string(rootcanal_args, CF_DEFAULTS_ROOTCANAL_ARGS,
               "Space-separated list of rootcanal args. ");
+DEFINE_bool(enable_host_nfc, CF_DEFAULTS_ENABLE_HOST_NFC,
+            "Enable the NFC emulator in the host.");
+DEFINE_int32(
+    casimir_instance_num, CF_DEFAULTS_CASIMIR_INSTANCE_NUM,
+    "If it is greater than 0, use an existing casimir instance which is "
+    "launched from cuttlefish instance "
+    "with casimir_instance_num. Else, launch a new casimir instance");
+DEFINE_string(casimir_args, CF_DEFAULTS_CASIMIR_ARGS,
+              "Space-separated list of casimir args.");
 DEFINE_bool(enable_host_uwb, CF_DEFAULTS_ENABLE_HOST_UWB,
             "Enable Pica in the host.");
 DEFINE_int32(
@@ -441,6 +450,7 @@ DEFINE_vec(device_external_network, CF_DEFAULTS_DEVICE_EXTERNAL_NETWORK,
 DECLARE_string(assembly_dir);
 DECLARE_string(boot_image);
 DECLARE_string(system_image_dir);
+DECLARE_string(snapshot_path);
 
 namespace cuttlefish {
 using vm_manager::QemuManager;
@@ -936,6 +946,9 @@ Result<CuttlefishConfig> InitializeCuttlefishConfiguration(
 
   tmp_config_obj.set_gem5_debug_flags(FLAGS_gem5_debug_flags);
 
+  // setting snapshot path
+  tmp_config_obj.set_snapshot_path(FLAGS_snapshot_path);
+
   // streaming, webrtc setup
   tmp_config_obj.set_webrtc_certs_dir(FLAGS_webrtc_certs_dir);
   tmp_config_obj.set_sig_server_secure(FLAGS_webrtc_sig_server_secure);
@@ -981,6 +994,9 @@ Result<CuttlefishConfig> InitializeCuttlefishConfiguration(
 
   // rootcanal and bt_connector should handle Bluetooth (instead of netsim)
   tmp_config_obj.set_enable_host_bluetooth_connector(FLAGS_enable_host_bluetooth && !is_bt_netsim);
+
+  tmp_config_obj.set_enable_host_nfc(FLAGS_enable_host_nfc);
+  tmp_config_obj.set_enable_host_nfc_connector(FLAGS_enable_host_nfc);
 
   // These flags inform NetsimServer::ResultSetup which radios it owns.
   if (is_bt_netsim) {
@@ -1130,6 +1146,13 @@ Result<CuttlefishConfig> InitializeCuttlefishConfiguration(
   tmp_config_obj.set_rootcanal_link_ble_port(7600 + rootcanal_instance_num);
   LOG(DEBUG) << "rootcanal_instance_num: " << rootcanal_instance_num;
   LOG(DEBUG) << "launch rootcanal: " << (FLAGS_rootcanal_instance_num <= 0);
+
+  tmp_config_obj.set_casimir_args(FLAGS_casimir_args);
+  auto casimir_instance_num = *instance_nums.begin() - 1;
+  if (FLAGS_casimir_instance_num > 0) {
+    casimir_instance_num = FLAGS_casimir_instance_num - 1;
+  }
+  tmp_config_obj.set_casimir_nci_port(7100 + casimir_instance_num);
 
   int netsim_instance_num = *instance_nums.begin() - 1;
   tmp_config_obj.set_netsim_instance_num(netsim_instance_num);
@@ -1314,8 +1337,7 @@ Result<CuttlefishConfig> InitializeCuttlefishConfiguration(
     instance.set_qemu_vnc_server_port(544 + num - 1);
     instance.set_adb_host_port(6520 + num - 1);
     instance.set_adb_ip_and_port("0.0.0.0:" + std::to_string(6520 + num - 1));
-
-    instance.set_fastboot_host_port(7520 + num - 1);
+    instance.set_fastboot_host_port(const_instance.adb_host_port());
 
     std::uint8_t ethernet_mac[6] = {};
     std::uint8_t mobile_mac[6] = {};
@@ -1515,7 +1537,9 @@ Result<CuttlefishConfig> InitializeCuttlefishConfiguration(
     instance.set_start_rootcanal(is_first_instance && !is_bt_netsim &&
                                  (FLAGS_rootcanal_instance_num <= 0));
 
-    instance.set_start_pica(is_first_instance);
+    instance.set_start_casimir(FLAGS_casimir_instance_num <= 0);
+
+    instance.set_start_pica(is_first_instance && FLAGS_pica_instance_num <= 0);
 
     if (!FLAGS_ap_rootfs_image.empty() && !FLAGS_ap_kernel_image.empty() && start_wmediumd) {
       // TODO(264537774): Ubuntu grub modules / grub monoliths cannot be used to boot

@@ -281,7 +281,7 @@ PRODUCT_PACKAGES += \
 # Authsecret AIDL HAL
 #
 PRODUCT_PACKAGES += \
-    android.hardware.authsecret-service.example
+    com.android.hardware.authsecret
 
 #
 # Audio HAL
@@ -563,11 +563,8 @@ PRODUCT_VENDOR_PROPERTIES += ro.vendor.wifi_impl=virt_wifi
 endif
 
 # UWB HAL
-PRODUCT_PACKAGES += \
-    android.hardware.uwb-service
-PRODUCT_COPY_FILES += \
-    device/google/cuttlefish/guest/hals/uwb/uwb-service.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/uwb-service.rc
-
+PRODUCT_PACKAGES += com.android.hardware.uwb
+PRODUCT_VENDOR_PROPERTIES += ro.vendor.uwb.dev=/dev/hvc9
 
 # Host packages to install
 PRODUCT_HOST_PACKAGES += socket_vsock_proxy
@@ -597,7 +594,7 @@ PRODUCT_PACKAGES += \
 
 # NFC AIDL HAL
 PRODUCT_PACKAGES += \
-    android.hardware.nfc-service.cuttlefish
+    com.google.cf.nfc
 
 # CAS AIDL HAL
 PRODUCT_PACKAGES += \
@@ -606,9 +603,11 @@ PRODUCT_PACKAGES += \
 PRODUCT_COPY_FILES += \
     device/google/cuttlefish/shared/config/pci.ids:$(TARGET_COPY_OUT_VENDOR)/pci.ids
 
+# New in-development HAL services using unfrozen interfaces. Do not include if
+# RELEASE_AIDL_USE_UNFROZEN is true (in the 'next' release configuration).
+ifeq ($(RELEASE_AIDL_USE_UNFROZEN),true)
 # Thread Network AIDL HAL and simulation CLI
 PRODUCT_PACKAGES += \
-    android.hardware.threadnetwork-service.sim \
+    com.android.hardware.threadnetwork \
     ot-cli-ftd
-PRODUCT_COPY_FILES += \
-    frameworks/native/data/etc/android.hardware.thread_network.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.thread_network.xml
+endif # RELEASE_AIDL_USE_UNFROZEN
