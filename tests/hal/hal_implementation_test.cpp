@@ -140,6 +140,7 @@ static const std::set<std::string> kKnownMissingHidl = {
     "android.hardware.wifi.supplicant@1.4", // Converted to AIDL (see b/196235436)
     "android.hidl.base@1.0",
     "android.hidl.memory.token@1.0",
+    "android.hidl.memory@1.0", // Deprecated (see b/205764958)
     "android.system.net.netd@1.1", // Converted to AIDL (see b/205764585)
     "android.system.suspend@1.0", // Converted to AIDL (see b/170260236)
     "android.system.wifi.keystore@1.0", // Converted to AIDL (see b/205764502)
@@ -176,6 +177,7 @@ static const std::set<std::string> kAutomotiveOnlyAidl = {
     "android.hardware.automotive.remoteaccess",
     "android.hardware.automotive.vehicle",
     "android.hardware.automotive.ivn",
+    "android.hardware.macsec",
 };
 
 static const std::set<std::string> kTvOnlyAidl = {
